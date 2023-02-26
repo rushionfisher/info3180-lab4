@@ -1,10 +1,10 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
-from app.forms import LoginForm
+from app.forms import LoginForm, UploadForm
 from werkzeug.security import check_password_hash
 
 
@@ -40,8 +40,7 @@ def upload():
 
         flash('File Saved', 'success')
         return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
-
-    return render_template('upload.html')
+    return render_template('upload.html', form=form)
 
 
 @app.route('/login', methods=['POST', 'GET'])
