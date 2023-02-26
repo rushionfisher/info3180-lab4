@@ -7,7 +7,6 @@ from app.models import UserProfile
 from app.forms import LoginForm, UploadForm
 from werkzeug.security import check_password_hash
 
-
 ###
 # Routing for your application.
 ###
@@ -21,7 +20,7 @@ def home():
 @app.route('/about/')
 def about():
     """Render the website's about page."""
-    return render_template('about.html', name="Rushion Fisher")
+    return render_template('about.html', name="Mary Jane")
 
 
 @app.route('/upload', methods=['POST', 'GET'])
@@ -29,15 +28,12 @@ def about():
 def upload():
     # Instantiate your form class
     form = UploadForm()
-
     # Validate file upload on submit
     if request.method == 'POST' and form.validate_on_submit():
+        # Get file data and save to your folder
         file = form.file_upload.data
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-        # Get file data and save to your uploads folder
-
         flash('File Saved', 'success')
         return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
     return render_template('upload.html', form=form)
@@ -46,14 +42,12 @@ def upload():
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     form = LoginForm()
-
     # change this to actually validate the entire form submission
     # and not just one field
     if request.method == 'POST' and form.validate_on_submit():
+        # Get the username and password values from the form.
         username = form.username.data
         password = form.password.data
-        # Get the username and password values from the form.
-
         # Using your model, query database for a user based on the username
         # and password submitted. Remember you need to compare the password hash.
         # You will need to import the appropriate function to do so.
@@ -61,14 +55,22 @@ def login():
         # passed to the login_user() method below.
         user = UserProfile.query.filter_by(username=username).first()
         if user is not None and check_password_hash(user.password, password):
+        # Gets user id, load into session
             login_user(user)
             flash('Logged in successfully', 'success')
             return redirect(url_for("upload"))
         else:
-            flash('Invalid username or password. Please try again')
-
-    flash_errors(form)  
+            flash('Invalid username or password. Please try again','danger')
+    flash_errors(form)
     return render_template("login.html", form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('home'))
+
 
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
@@ -79,7 +81,13 @@ def load_user(id):
 ###
 # The functions below should be applicable to all Flask apps.
 ###
-
+def get_uploaded_images():
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', './upload')
+    images = []
+    for filename in os.listdir(UPLOAD_FOLDER):
+        if filename.endswith('.jpg') or filename.endswith('.png'):
+            images.append(filename)
+    return images
 # Flash errors from the form if validation fails
 def flash_errors(form):
     for field, errors in form.errors.items():
@@ -88,6 +96,18 @@ def flash_errors(form):
                 getattr(form, field).label.text,
                 error
 ), 'danger')
+
+@app.route('/upload/<filename>')
+def get_image(filename):
+    return send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename)
+
+@app.route('/files')
+@login_required
+def files():
+    # Get a list of uploaded image filenames
+    image_files = get_uploaded_images()
+    # Render the files.html template with the list of image filenames
+    return render_template('files.html', image_files=image_files)
 
 @app.route('/<file_name>.txt')
 def send_text_file(file_name):

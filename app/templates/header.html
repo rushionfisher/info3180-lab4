@@ -15,11 +15,21 @@
         <li class="nav-item">
             <a class="nav-link" href="{{ url_for('upload') }}">File Upload</a>
         </li>
+        {% if current_user.is_authenticated %}
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('logout') }}">Log out</a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('files') }}">View Images</a>
+        </li>
       </ul>
       <ul class="navbar-nav">
+        {% if not current_user.is_authenticated %}
         <li class="nav-item">
             <a class="nav-link" href="{{ url_for('login') }}">Login</a>
         </li>
+        {% endif %}
       </ul>
     </div>
   </div>
